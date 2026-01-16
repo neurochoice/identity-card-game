@@ -1,4 +1,4 @@
-// ===== Identity × Decision Task Pilot =====
+// ===== Identity × Card-Game Pilot =====
 
 
 // ---------- CONFIG ----------
@@ -44,7 +44,7 @@ const RESEARCHER_VIEW = (urlParams.get('researcher') === '1') || (urlParams.get(
 const jsPsych = initJsPsych({
   display_element: 'jspsych-target',
   override_safe_mode: true,
-  on_data_update: d => d.timestamp = new Date().toISOString(),
+  on_data_update: d => { const iso = new Date().toISOString(); d.timestamp = iso; d.trial_timestamp = iso; },
   on_finish: function(){
     const pid   = jsPsych.data.get().first(1).values()[0]?.participant_id || 'anon';
     const stamp = new Date().toISOString().replace(/[:.]/g,'-');
@@ -763,8 +763,8 @@ function pushHeritageBlock(tl, position, showHandoff=true){
 let timeline = [];
 const startsWithHost = COUNTERBALANCE ? (Math.random() < 0.5) : true;
 const condition_order = startsWithHost ? 'HostFirst' : 'HeritageFirst';
-jsPsych.data.addProperties({ condition_order });
 const initLang = startsWithHost ? 'en' : 'ko';
+jsPsych.data.addProperties({ condition_order, order_condition: condition_order, start_lang: initLang });
 timeline.push( startsWithHost ? consentEN() : consentKO() );
 timeline.push( eligibilityScreener(initLang) );
 timeline.push( eligibilityGate(initLang) );
