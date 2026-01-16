@@ -368,18 +368,43 @@ function consentKO(){
 
 
 // ---------- Eligibility screener (hard gate) ----------
-function eligibilityScreener(){
-  const labels = ['Yes', 'No'];
+function eligibilityScreener(lang='en'){
+  const isKo = (lang === 'ko');
+  const labels = isKo ? ['예', '아니오'] : ['Yes', 'No'];
   return {
     type: jsPsychSurveyLikert,
-    preamble: `<h3>Eligibility check</h3>`,
+    preamble: isKo ? `<h3>참여 적합성 확인</h3>` : `<h3>Eligibility check</h3>`,
     questions: [
-      { name:'ka',  prompt:'Do you identify as <strong>Korean–American</strong> (or Korean heritage + American cultural upbringing/experience)?', labels, required:true },
-      { name:'kor', prompt:'Can you understand <strong>Korean</strong> at least conversationally?', labels, required:true },
-      { name:'us',  prompt:'Have you spent <strong>1+ year</strong> living in, studying in, or being strongly immersed in the United States?', labels, required:true },
-      { name:'home', prompt:'Growing up, was Korean culture (family/language/traditions) meaningfully present in your home life?', labels, required:true }
+      {
+        name:'ka',
+        prompt: isKo
+          ? '본인을 <strong>한국계 미국인</strong>(한국 혈통 + 미국 문화권에서의 성장/경험)으로 정체화하시나요?'
+          : 'Do you identify as <strong>Korean–American</strong> (or Korean heritage + American cultural upbringing/experience)?',
+        labels, required:true
+      },
+      {
+        name:'kor',
+        prompt: isKo
+          ? '<strong>한국어</strong>를 최소한 일상 대화 수준으로 이해할 수 있나요?'
+          : 'Can you understand <strong>Korean</strong> at least conversationally?',
+        labels, required:true
+      },
+      {
+        name:'us',
+        prompt: isKo
+          ? '미국에서 거주/학업/강한 문화적 몰입 경험이 <strong>1년 이상</strong> 있나요?'
+          : 'Have you spent <strong>1+ year</strong> living in, studying in, or being strongly immersed in the United States?',
+        labels, required:true
+      },
+      {
+        name:'home',
+        prompt: isKo
+          ? '성장 과정에서 가정 내에 한국 문화(가족/언어/전통)가 의미 있게 존재했나요?'
+          : 'Growing up, was Korean culture (family/language/traditions) meaningfully present in your home life?',
+        labels, required:true
+      }
     ],
-    data: { task:'eligibility_screener' },
+    data: { task:'eligibility_screener', lang },
     on_finish: (d)=>{
       const r = d.response || {};
       const yes = (x)=> (typeof x === 'number' && x === 0); // Yes = index 0
@@ -393,20 +418,24 @@ function eligibilityScreener(){
     }
   };
 }
-function eligibilityGate(){
+function eligibilityGate(lang='en'){
+  const isKo = (lang === 'ko');
   return {
     type: jsPsychHtmlButtonResponse,
     stimulus: ()=>{
       const last = jsPsych.data.get().filter({task:'eligibility_screener'}).last(1).values()[0] || {};
       if(last.eligible === 1){
-        return `<p>Thank you — you can continue.</p>`;
+        return isKo ? `<p>감사합니다 — 계속 진행하실 수 있습니다.</p>` : `<p>Thank you — you can continue.</p>`;
       }
-      return `<h3>End</h3>
-        <p>This pilot is limited to Korean–American bicultural participants. Thanks for your time.</p>`;
+      return isKo
+        ? `<h3>종료</h3>
+           <p>본 파일럿은 한국계 미국인 이중문화 참가자를 대상으로 합니다. 참여해 주셔서 감사합니다.</p>`
+        : `<h3>End</h3>
+           <p>This pilot is limited to Korean–American bicultural participants. Thanks for your time.</p>`;
     },
-    choices: ['Continue'],
+    choices: [isKo ? '계속' : 'Continue'],
     button_html: BTN,
-    data: { task:'eligibility_gate' },
+    data: { task:'eligibility_gate', lang },
     on_finish: ()=>{
       const last = jsPsych.data.get().filter({task:'eligibility_screener'}).last(1).values()[0] || {};
       if(last.eligible !== 1){
@@ -417,18 +446,19 @@ function eligibilityGate(){
 }
 
 // ---------- Risk control (single-item, 0–10) ----------
-function riskItem(){
+function riskItem(lang='en'){
+  const isKo = (lang === 'ko');
   const labels = Array.from({length: 11}, (_,i)=> String(i));
   return {
     type: jsPsychSurveyLikert,
-    preamble: `<h3>One quick question</h3>`,
+    preamble: isKo ? `<h3>간단한 질문</h3>` : `<h3>One quick question</h3>`,
     questions: [{
       name:'risk_0_10',
-      prompt:'In general, how willing are you to take risks?',
+      prompt: isKo ? '전반적으로, 위험을 감수하는 데 어느 정도로 적극적이신가요?' : 'In general, how willing are you to take risks?',
       labels,
       required:true
     }],
-    data: { task:'risk_item' },
+    data: { task:'risk_item', lang },
     on_finish: (d)=>{
       const idx = d.response?.risk_0_10;
       d.risk_0_10 = (typeof idx === 'number') ? idx : null; // labels are 0–10 already
@@ -437,24 +467,26 @@ function riskItem(){
 }
 
 // ---------- BII (short, paraphrased items; 1–7) ----------
-function biiShort(){
+function biiShort(lang='en'){
+  const isKo = (lang === 'ko');
   const labels = ['1','2','3','4','5','6','7'];
   return {
     type: jsPsychSurveyLikert,
-    preamble: `<h3>Identity experience</h3>
-      <p class="small">Please respond based on how you experience your Korean and American sides in everyday life.</p>`,
+    preamble: isKo
+      ? `<h3>정체성 경험</h3><p class="small">일상에서 한국/미국 정체성을 어떻게 경험하는지 기준으로 응답해 주세요.</p>`
+      : `<h3>Identity experience</h3><p class="small">Please respond based on how you experience your Korean and American sides in everyday life.</p>`,
     questions: [
-      {name:'harm1', prompt:'My Korean and American sides fit together smoothly.', labels, required:true},
-      {name:'harm2', prompt:'I feel torn between Korean and American expectations.', labels, required:true},
-      {name:'harm3', prompt:'I can switch between Korean and American ways of being without conflict.', labels, required:true},
-      {name:'harm4', prompt:'My Korean and American sides clash in my daily life.', labels, required:true},
+      {name:'harm1', prompt: isKo ? '나의 한국적/미국적 측면은 자연스럽게 잘 어울린다.' : 'My Korean and American sides fit together smoothly.', labels, required:true},
+      {name:'harm2', prompt: isKo ? '한국과 미국의 기대 사이에서 갈등을 느낀다.' : 'I feel torn between Korean and American expectations.', labels, required:true},
+      {name:'harm3', prompt: isKo ? '갈등 없이 한국식/미국식 방식으로 전환할 수 있다.' : 'I can switch between Korean and American ways of being without conflict.', labels, required:true},
+      {name:'harm4', prompt: isKo ? '일상에서 한국적/미국적 측면이 충돌한다.' : 'My Korean and American sides clash in my daily life.', labels, required:true},
 
-      {name:'blend1', prompt:'I feel like a blend/mix of Korean and American culture.', labels, required:true},
-      {name:'blend2', prompt:'I keep my Korean and American sides separate depending on the situation.', labels, required:true},
-      {name:'blend3', prompt:'My identities feel like one integrated whole.', labels, required:true},
-      {name:'blend4', prompt:'I feel like a different person in Korean contexts vs American contexts.', labels, required:true}
+      {name:'blend1', prompt: isKo ? '나는 한국 문화와 미국 문화가 섞인 사람처럼 느낀다.' : 'I feel like a blend/mix of Korean and American culture.', labels, required:true},
+      {name:'blend2', prompt: isKo ? '상황에 따라 한국적/미국적 측면을 따로 유지한다.' : 'I keep my Korean and American sides separate depending on the situation.', labels, required:true},
+      {name:'blend3', prompt: isKo ? '두 정체성은 하나로 통합된 전체처럼 느껴진다.' : 'My identities feel like one integrated whole.', labels, required:true},
+      {name:'blend4', prompt: isKo ? '한국 맥락과 미국 맥락에서 다른 사람처럼 느껴진다.' : 'I feel like a different person in Korean contexts vs American contexts.', labels, required:true}
     ],
-    data: { task:'bii_short' },
+    data: { task:'bii_short', lang },
     on_finish: (d)=>{
       const r = d.response || {};
       const to1to7 = (x)=> (typeof x === 'number') ? (x + 1) : null; // jsPsych 0–6
@@ -588,45 +620,79 @@ function trustGate(lang){
 function trustGamePerBlock(identity, lang, params){
   const isKo = (lang === 'ko');
 
-  const send = {
+  // --- Send decisions (3 partners) ---
+  const makeSend = (partnerLabel) => ({
     type: jsPsychHtmlButtonResponse,
     stimulus: isKo
       ? `<h3>신뢰 게임</h3>
-         <p>당신은 <strong>10 토큰</strong>을 가지고 있습니다.</p>
-         <p>상대에게 보낼 토큰 수를 선택하세요 (0–10). 보낸 토큰은 <strong>3배</strong>가 됩니다.</p>`
+         <p>상대 <strong>${partnerLabel}</strong>에게 보낼 토큰 수를 선택하세요.</p>
+         <p>당신은 <strong>10 토큰</strong>을 가지고 있으며 (0–10), 보낸 토큰은 <strong>3배</strong>가 됩니다.</p>`
       : `<h3>Trust game</h3>
-         <p>You have <strong>10 tokens</strong>.</p>
-         <p>Choose how many tokens to send (0–10). Sent tokens are <strong>tripled</strong>.</p>`,
+         <p>Choose how many tokens to send to <strong>Partner ${partnerLabel}</strong>.</p>
+         <p>You have <strong>10 tokens</strong> (0–10). Sent tokens are <strong>tripled</strong>.</p>`,
     choices: Array.from({length: 11}, (_,i)=> String(i)),
     button_html: BTN,
-    data: {task:'trust_send', identity, lang, ...(params||{})},
+    data: {task:'trust_send', identity, lang, partner: partnerLabel, ...(params||{})},
     on_finish: (d)=>{
       d.trust_send = parseInt(d.response, 10);
       d.trust_multiplier = 3;
       d.trust_receiver_gets = d.trust_send * 3;
     }
+  });
+
+  // --- Return decisions (2 stake scenarios; strategy method) ---
+  const parseIntSafe = (x)=>{
+    const n = parseInt(String(x||'').trim(), 10);
+    return Number.isFinite(n) ? n : null;
   };
 
-  const returnTrial = {
+  const return15 = {
     type: jsPsychSurveyText,
     preamble: isKo
-      ? `<h3>돌려주기</h3><p>상대가 10 토큰을 보냈다고 가정해 보세요. 당신은 <strong>30 토큰</strong>을 받습니다.</p>`
-      : `<h3>Return decision</h3><p>Assume the other person sent 10 tokens. You receive <strong>30 tokens</strong>.</p>`,
+      ? `<h3>돌려주기</h3><p>상대가 5 토큰을 보냈다고 가정하면, 당신은 <strong>15 토큰</strong>을 받습니다.</p>`
+      : `<h3>Return decision</h3><p>If the other person sent 5 tokens, you would receive <strong>15 tokens</strong>.</p>`,
+    questions: [
+      {name:'trust_return', prompt: isKo ? '당신은 몇 토큰을 상대에게 돌려주겠습니까? (0–15)' : 'How many tokens would you return? (0–15)', required:true}
+    ],
+    data: {task:'trust_return', identity, lang, received:15, scenario:'receive15', ...(params||{})},
+    on_finish: (d)=>{
+      const raw = (d.response?.trust_return ?? '').toString().trim();
+      const v = parseIntSafe(raw);
+      d.trust_return_raw = raw;
+      d.trust_total_received = 15;
+      d.trust_return = (v===null) ? null : Math.max(0, Math.min(15, v));
+      d.trust_return_rate = (d.trust_return===null) ? null : (d.trust_return / 15);
+    }
+  };
+
+  const return30 = {
+    type: jsPsychSurveyText,
+    preamble: isKo
+      ? `<h3>돌려주기</h3><p>상대가 10 토큰을 보냈다고 가정하면, 당신은 <strong>30 토큰</strong>을 받습니다.</p>`
+      : `<h3>Return decision</h3><p>If the other person sent 10 tokens, you would receive <strong>30 tokens</strong>.</p>`,
     questions: [
       {name:'trust_return', prompt: isKo ? '당신은 몇 토큰을 상대에게 돌려주겠습니까? (0–30)' : 'How many tokens would you return? (0–30)', required:true}
     ],
-    data: {task:'trust_return', identity, lang, ...(params||{})},
+    data: {task:'trust_return', identity, lang, received:30, scenario:'receive30', ...(params||{})},
     on_finish: (d)=>{
       const raw = (d.response?.trust_return ?? '').toString().trim();
-      const v = parseInt(raw, 10);
+      const v = parseIntSafe(raw);
       d.trust_return_raw = raw;
-      d.trust_return = (Number.isFinite(v) ? Math.max(0, Math.min(30, v)) : null);
       d.trust_total_received = 30;
+      d.trust_return = (v===null) ? null : Math.max(0, Math.min(30, v));
       d.trust_return_rate = (d.trust_return===null) ? null : (d.trust_return / 30);
     }
   };
 
-  return { timeline: [send, returnTrial] };
+  return {
+    timeline: [
+      makeSend('A'),
+      makeSend('B'),
+      makeSend('C'),
+      return15,
+      return30
+    ]
+  };
 }
 
 
@@ -659,11 +725,11 @@ function pushHostBlock(tl, position){
     );
   });
 }
-function pushHeritageBlock(tl, position){
+function pushHeritageBlock(tl, position, showHandoff=true){
   const p = primes[1];
   const block_index = (position===1)?0:1;
 
-  tl.push( koHandoffTrial(position) );
+  if(showHandoff) tl.push( koHandoffTrial(position) );
 
   const subtimeline = [];
   subtimeline.push( blockStartPage('Heritage','ko', position) );
@@ -698,11 +764,12 @@ let timeline = [];
 const startsWithHost = COUNTERBALANCE ? (Math.random() < 0.5) : true;
 const condition_order = startsWithHost ? 'HostFirst' : 'HeritageFirst';
 jsPsych.data.addProperties({ condition_order });
+const initLang = startsWithHost ? 'en' : 'ko';
 timeline.push( startsWithHost ? consentEN() : consentKO() );
-timeline.push( eligibilityScreener() );
-timeline.push( eligibilityGate() );
-timeline.push( riskItem() );
-timeline.push( biiShort() );
+timeline.push( eligibilityScreener(initLang) );
+timeline.push( eligibilityGate(initLang) );
+timeline.push( riskItem(initLang) );
+timeline.push( biiShort(initLang) );
 // Trust-game comprehension check (once)
 const trustLang = startsWithHost ? 'en' : 'ko';
 timeline.push( trustComprehension(trustLang) );
@@ -712,7 +779,8 @@ if (startsWithHost){
   timeline.push(...neutralReset(1));
   pushHeritageBlock(timeline, 2);
 } else {
-  pushHeritageBlock(timeline, 1);
+  // Already in Korean at the start; skip the "Korean section" handoff banner on the first block.
+  pushHeritageBlock(timeline, 1, false);
   timeline.push(...neutralReset(1));
   pushHostBlock(timeline, 2);
 }
