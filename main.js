@@ -1,4 +1,4 @@
-// ===== Identity × Card-Game Pilot =====
+// ===== Identity × Decision Task Pilot =====
 
 
 // ---------- CONFIG ----------
@@ -352,15 +352,15 @@ const faithful_instructions_ko = {
 function consentEN(){
   return { type: jsPsychHtmlButtonResponse,
     stimulus: `<h2>Consent</h2>
-      <p>This study looks at how people make choices after viewing short sets of images and words. Participation is voluntary and anonymous.</p>
-      <p>You will answer a few short questions and play a simple card game. There are no right or wrong answers. You may stop at any time without penalty.</p>`,
+      <p>This study examines how context influences decision-making after brief exposure to images and words. Participation is voluntary and anonymous.</p>
+      <p>You will answer a short eligibility check and a few brief questions, then complete two short sections (one in English and one in Korean) and make a small set of decisions in a short interactive task. There are no right or wrong answers. You may stop at any time without penalty.</p>`,
     choices:['Continue'], button_html: BTN, data:{task:'consent', lang:'en'} };
 }
 function consentKO(){
   return { type: jsPsychHtmlButtonResponse,
     stimulus: `<h2>동의</h2>
-      <p>이 연구는 짧은 이미지와 단어를 본 뒤 사람들이 어떻게 선택하는지 살펴봅니다. 참여는 자발적이며 익명입니다.</p>
-      <p>몇 가지 간단한 질문에 답하고 카드 게임을 하게 됩니다. 정답은 없으며, 언제든지 중단할 수 있습니다.</p>`,
+      <p>본 연구는 짧은 이미지/단어 노출 이후, 맥락이 의사결정에 어떤 영향을 미치는지 살펴봅니다. 참여는 자발적이며 익명입니다.</p>
+      <p>간단한 적합성(Eligibility) 질문과 몇 가지 짧은 문항에 응답한 뒤, 영어/한국어 두 섹션을 수행하고 짧은 상호작용형 의사결정 과제를 진행합니다. 정답은 없으며, 언제든지 중단할 수 있습니다(불이익 없음).</p>`,
     choices:['계속'], button_html: BTN, data:{task:'consent', lang:'ko'} };
 }
 
@@ -587,75 +587,46 @@ function trustGate(lang){
 
 function trustGamePerBlock(identity, lang, params){
   const isKo = (lang === 'ko');
-  const nSend = 3;
-  const partnerLabels = ['A','B','C'];
 
-  const sendTrials = Array.from({length: nSend}, (_,i)=>{
-    const partner = partnerLabels[i] || String(i+1);
-    return {
-      type: jsPsychHtmlButtonResponse,
-      stimulus: isKo
-        ? `<h3>신뢰 게임</h3>
-           <p>아래는 <strong>서로 다른 상대</strong>와 하는 짧은 1회성 선택입니다 (상대 ${partner}).</p>
-           <p>당신은 <strong>10 토큰</strong>을 가지고 있습니다.</p>
-           <p>상대에게 보낼 토큰 수를 선택하세요 (0–10). 보낸 토큰은 <strong>3배</strong>가 되어 상대에게 전달됩니다.</p>`
-        : `<h3>Trust game</h3>
-           <p>This is a short one‑shot choice with a <strong>different partner</strong> each time (Partner ${partner}).</p>
-           <p>You have <strong>10 tokens</strong>.</p>
-           <p>Choose how many tokens to send (0–10). Sent tokens are <strong>tripled</strong> for the other person.</p>`,
-      choices: Array.from({length: 11}, (_,j)=> String(j)),
-      button_html: BTN,
-      data: {task:'trust_send', identity, lang, trust_trial_index: i+1, trust_partner: partner, ...(params||{})},
-      on_finish: (d)=>{
-        // jsPsychHtmlButtonResponse returns the index of the pressed button
-        d.trust_send = (typeof d.response === 'number') ? d.response : null;
-        d.trust_send_tripled = (d.trust_send===null) ? null : (d.trust_send * 3);
-      }
-    };
-  });
+  const send = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: isKo
+      ? `<h3>신뢰 게임</h3>
+         <p>당신은 <strong>10 토큰</strong>을 가지고 있습니다.</p>
+         <p>상대에게 보낼 토큰 수를 선택하세요 (0–10). 보낸 토큰은 <strong>3배</strong>가 됩니다.</p>`
+      : `<h3>Trust game</h3>
+         <p>You have <strong>10 tokens</strong>.</p>
+         <p>Choose how many tokens to send (0–10). Sent tokens are <strong>tripled</strong>.</p>`,
+    choices: Array.from({length: 11}, (_,i)=> String(i)),
+    button_html: BTN,
+    data: {task:'trust_send', identity, lang, ...(params||{})},
+    on_finish: (d)=>{
+      d.trust_send = parseInt(d.response, 10);
+      d.trust_multiplier = 3;
+      d.trust_receiver_gets = d.trust_send * 3;
+    }
+  };
 
   const returnTrial = {
     type: jsPsychSurveyText,
     preamble: isKo
-      ? `<h3>신뢰 게임 (되돌려주기)</h3>
-         <p>이번에는 당신이 받은 토큰 중 일부를 상대에게 되돌려주는 상황을 가정합니다.</p>
-         <p>두 가지 상황에서 각각 얼마나 되돌려주겠습니까?</p>`
-      : `<h3>Trust game (returning)</h3>
-         <p>Now imagine you received some tokens from the other person. You may return any amount.</p>
-         <p>How many tokens would you return in each situation?</p>`,
-    questions: isKo
-      ? [
-          {prompt: '상대가 5 토큰을 보내서 당신이 15 토큰(3배)을 받았다면, 몇 토큰을 되돌려주겠습니까? (0–15)', name:'trust_return_15', required:true},
-          {prompt: '상대가 10 토큰을 보내서 당신이 30 토큰(3배)을 받았다면, 몇 토큰을 되돌려주겠습니까? (0–30)', name:'trust_return_30', required:true}
-        ]
-      : [
-          {prompt: 'If the other person sent 5 tokens (so you received 15), how many would you return? (0–15)', name:'trust_return_15', required:true},
-          {prompt: 'If the other person sent 10 tokens (so you received 30), how many would you return? (0–30)', name:'trust_return_30', required:true}
-        ],
-    button_label: isKo ? '계속' : 'Continue',
-    data: {task:'trust_return_strategy', identity, lang, ...(params||{})},
+      ? `<h3>돌려주기</h3><p>상대가 10 토큰을 보냈다고 가정해 보세요. 당신은 <strong>30 토큰</strong>을 받습니다.</p>`
+      : `<h3>Return decision</h3><p>Assume the other person sent 10 tokens. You receive <strong>30 tokens</strong>.</p>`,
+    questions: [
+      {name:'trust_return', prompt: isKo ? '당신은 몇 토큰을 상대에게 돌려주겠습니까? (0–30)' : 'How many tokens would you return? (0–30)', required:true}
+    ],
+    data: {task:'trust_return', identity, lang, ...(params||{})},
     on_finish: (d)=>{
-      const r = d.response || {};
-      const raw15 = (r.trust_return_15 ?? '').toString().trim();
-      const raw30 = (r.trust_return_30 ?? '').toString().trim();
-      const v15 = parseInt(raw15, 10);
-      const v30 = parseInt(raw30, 10);
-
-      d.trust_return_15_raw = raw15;
-      d.trust_return_30_raw = raw30;
-
-      d.trust_return_15 = (Number.isFinite(v15) ? Math.max(0, Math.min(15, v15)) : null);
-      d.trust_return_30 = (Number.isFinite(v30) ? Math.max(0, Math.min(30, v30)) : null);
-
-      d.trust_return_rate_15 = (d.trust_return_15===null) ? null : (d.trust_return_15 / 15);
-      d.trust_return_rate_30 = (d.trust_return_30===null) ? null : (d.trust_return_30 / 30);
-
-      const rates = [d.trust_return_rate_15, d.trust_return_rate_30].filter(x => typeof x === 'number');
-      d.trust_return_rate_mean = rates.length ? (rates.reduce((a,b)=>a+b,0)/rates.length) : null;
+      const raw = (d.response?.trust_return ?? '').toString().trim();
+      const v = parseInt(raw, 10);
+      d.trust_return_raw = raw;
+      d.trust_return = (Number.isFinite(v) ? Math.max(0, Math.min(30, v)) : null);
+      d.trust_total_received = 30;
+      d.trust_return_rate = (d.trust_return===null) ? null : (d.trust_return / 30);
     }
   };
 
-  return { timeline: [...sendTrials, returnTrial] };
+  return { timeline: [send, returnTrial] };
 }
 
 
